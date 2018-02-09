@@ -2,19 +2,20 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Layout, Icon, message } from 'antd';
 import DocumentTitle from 'react-document-title';
-import { connect } from 'dva';
 import { Route, Redirect, Switch, routerRedux } from 'dva/router';
 import { ContainerQuery } from 'react-container-query';
 import classNames from 'classnames';
 import { enquireScreen } from 'enquire-js';
-import GlobalHeader from '../components/GlobalHeader';
-import GlobalFooter from '../components/GlobalFooter';
-import SiderMenu from '../components/SiderMenu';
-import NotFound from '../routes/Exception/404';
-import { getRoutes } from '../utils/utils';
-import Authorized from '../utils/Authorized';
-import { getMenuData } from '../common/menu';
-import logo from '../assets/logo.svg';
+import GlobalHeader from '../../components/GlobalHeader';
+import GlobalFooter from '../../components/GlobalFooter';
+import SiderMenu from '../../components/SiderMenu';
+import NotFound from '../../routes/Exception/404';
+import { getRoutes } from '../../utils/utils';
+import Authorized from '../../utils/Authorized';
+import { getMenuData } from '../../common/menu';
+import logo from '../../assets/logo.svg';
+
+import {GLOBAL_FOOTER_CONFIG, QUERY} from "./config";
 
 const { Content } = Layout;
 const { AuthorizedRoute } = Authorized;
@@ -38,33 +39,13 @@ const getRedirect = (item) => {
 };
 getMenuData().forEach(getRedirect);
 
-const query = {
-  'screen-xs': {
-    maxWidth: 575,
-  },
-  'screen-sm': {
-    minWidth: 576,
-    maxWidth: 767,
-  },
-  'screen-md': {
-    minWidth: 768,
-    maxWidth: 991,
-  },
-  'screen-lg': {
-    minWidth: 992,
-    maxWidth: 1199,
-  },
-  'screen-xl': {
-    minWidth: 1200,
-  },
-};
 
 let isMobile;
 enquireScreen((b) => {
   isMobile = b;
 });
 
-class BasicLayout extends React.PureComponent {
+export default class BasicLayout extends React.PureComponent {
   static childContextTypes = {
     location: PropTypes.object,
     breadcrumbNameMap: PropTypes.object,
@@ -85,9 +66,7 @@ class BasicLayout extends React.PureComponent {
         isMobile: mobile,
       });
     });
-    this.props.dispatch({
-      type: 'user/fetchCurrent',
-    });
+    this.props.fetchCurrent();
   }
   getPageTitle() {
     const { routerData, location } = this.props;
@@ -113,41 +92,9 @@ class BasicLayout extends React.PureComponent {
     }
     return redirect;
   }
-  handleMenuCollapse = (collapsed) => {
-    this.props.dispatch({
-      type: 'global/changeLayoutCollapsed',
-      payload: collapsed,
-    });
-  }
-  handleNoticeClear = (type) => {
-    message.success(`清空了${type}`);
-    this.props.dispatch({
-      type: 'global/clearNotices',
-      payload: type,
-    });
-  }
-  handleMenuClick = ({ key }) => {
-    if (key === 'triggerError') {
-      this.props.dispatch(routerRedux.push('/exception/trigger'));
-      return;
-    }
-    if (key === 'logout') {
-      this.props.dispatch({
-        type: 'login/logout',
-      });
-    }
-  }
-  handleNoticeVisibleChange = (visible) => {
-    if (visible) {
-      this.props.dispatch({
-        type: 'global/fetchNotices',
-      });
-    }
-  }
   render() {
-    const {
-      currentUser, collapsed, fetchingNotices, notices, routerData, match, location,
-    } = this.props;
+    const {currentUser, collapsed, fetchingNotices, notices, routerData, match, location} = this.props;
+    const {handleMenuCollapse, handleNoticeClear, handleMenuClick, handleNoticeVisibleChange} = this.props;
     const bashRedirect = this.getBashRedirect();
     const layout = (
       <Layout>
@@ -161,7 +108,7 @@ class BasicLayout extends React.PureComponent {
           collapsed={collapsed}
           location={location}
           isMobile={this.state.isMobile}
-          onCollapse={this.handleMenuCollapse}
+          onCollapse={handleMenuCollapse}
         />
         <Layout>
           <GlobalHeader
@@ -171,10 +118,10 @@ class BasicLayout extends React.PureComponent {
             notices={notices}
             collapsed={collapsed}
             isMobile={this.state.isMobile}
-            onNoticeClear={this.handleNoticeClear}
-            onCollapse={this.handleMenuCollapse}
-            onMenuClick={this.handleMenuClick}
-            onNoticeVisibleChange={this.handleNoticeVisibleChange}
+            onNoticeClear={handleNoticeClear}
+            onCollapse={handleMenuCollapse}
+            onMenuClick={handleMenuClick}
+            onNoticeVisibleChange={handleNoticeVisibleChange}
           />
           <Content style={{ margin: '24px 24px 0', height: '100%' }}>
             <Switch>
@@ -201,36 +148,14 @@ class BasicLayout extends React.PureComponent {
               <Route render={NotFound} />
             </Switch>
           </Content>
-          <GlobalFooter
-            links={[{
-              key: 'Pro 首页',
-              title: 'Pro 首页',
-              href: 'http://pro.ant.design',
-              blankTarget: true,
-            }, {
-              key: 'github',
-              title: <Icon type="github" />,
-              href: 'https://github.com/ant-design/ant-design-pro',
-              blankTarget: true,
-            }, {
-              key: 'Ant Design',
-              title: 'Ant Design',
-              href: 'http://ant.design',
-              blankTarget: true,
-            }]}
-            copyright={
-              <div>
-                Copyright <Icon type="copyright" /> 2018 蚂蚁金服体验技术部出品
-              </div>
-            }
-          />
+          <GlobalFooter {...GLOBAL_FOOTER_CONFIG} />
         </Layout>
       </Layout>
     );
 
     return (
       <DocumentTitle title={this.getPageTitle()}>
-        <ContainerQuery query={query}>
+        <ContainerQuery query={QUERY}>
           {params => <div className={classNames(params)}>{layout}</div>}
         </ContainerQuery>
       </DocumentTitle>
@@ -238,9 +163,3 @@ class BasicLayout extends React.PureComponent {
   }
 }
 
-export default connect(({ user, global, loading }) => ({
-  currentUser: user.currentUser,
-  collapsed: global.collapsed,
-  fetchingNotices: loading.effects['global/fetchNotices'],
-  notices: global.notices,
-}))(BasicLayout);

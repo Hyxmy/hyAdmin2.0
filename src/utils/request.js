@@ -1,7 +1,7 @@
 import fetch from 'dva/fetch';
 import { notification } from 'antd';
 import { routerRedux } from 'dva/router';
-import store from '../index';
+import app from '../app';
 
 const codeMessage = {
   200: '服务器成功返回请求的数据',
@@ -65,7 +65,7 @@ export default function request(url, options) {
       return response.json();
     })
     .catch((e) => {
-      const { dispatch } = store;
+      const { dispatch } = app._store;
       const status = e.name;
       if (status === 401) {
         dispatch({

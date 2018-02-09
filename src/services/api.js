@@ -61,9 +61,15 @@ export async function queryFakeList(params) {
 }
 
 export async function fakeAccountLogin(params) {
-  return request('/api/login/account', {
+  let myHeaders = new Headers({
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'x-requested-with'
+  })
+  return request('http://127.0.0.1:8360/System/hyStart/login', {
     method: 'POST',
     body: params,
+    headers: myHeaders,
+    mode: 'cors'
   });
 }
 
